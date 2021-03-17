@@ -102,7 +102,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
       return;
     }
 
-    let modelUrl = H5P.getPath(this.model.path, H5PEditor.contentId));
+    let modelUrl = H5P.getPath(this.model.path, H5PEditor.contentId);
     let params = $.extend({}, { modelUrl }, this.params);
     this.babylonBox = H5P.newRunnable({
       library: 'H5P.BabylonBox 1.0',

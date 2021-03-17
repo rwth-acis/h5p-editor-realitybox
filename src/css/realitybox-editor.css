@@ -7,3 +7,15 @@
   height: calc(0.75 * 100vh);
   max-height: 500px;
 }
+
+.h5p-realitybox-editor .field.wizard .h5peditor-tab-model::before {
+  content: '\e922';
+}
+
+.h5p-realitybox-editor .field.wizard .h5peditor-tab-assets::before {
+  content: '\e917';
+}
+
+.h5p-realitybox-editor .field.wizard .h5peditor-tab-settings::before {
+  content: '\e916';
+}

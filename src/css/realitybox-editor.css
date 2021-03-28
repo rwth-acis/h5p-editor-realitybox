@@ -19,3 +19,18 @@
 .h5p-realitybox-editor .field.wizard .h5peditor-tab-settings::before {
   content: '\e916';
 }
+
+.h5p-realitybox-editor > .h5peditor-semi-fullscreen .form-manager-head.form-manager-footer {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  width: 100%;
+  max-width: 958px;
+  margin: auto;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0 20px 20px;
+  box-sizing: border-box;
+}

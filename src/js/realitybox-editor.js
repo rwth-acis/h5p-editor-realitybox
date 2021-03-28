@@ -10,17 +10,12 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    */
   function RealityBoxEditor(parent, field, params, setValue) {
 
-    H5P.DragNBar.FormManager.call(
-      this,
-      parent.parent,
-      {
-        doneButtonLabel: 'Done',
-        deleteButtonLabel: 'Delete',
-        expandBreadcrumbButtonLabel: 'Full window',
-        collapseBreadcrumbButtonLabel: 'Close full window'
-      },
-      'realitybox'
-    );
+    H5P.DragNBar.FormManager.call(this, parent.parent, {
+      doneButtonLabel: 'Done',
+      deleteButtonLabel: 'Delete',
+      expandBreadcrumbButtonLabel: 'Enter fullscreen',
+      collapseBreadcrumbButtonLabel: 'Exit fullscreen'
+    }, 'realitybox');
 
     this.field = field;
     this.parent = parent;
@@ -40,7 +35,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     });
 
     this.params = $.extend({
-      markers: []
+      annotations: []
     }, params);
     this.setValue(field, this.params);
 
@@ -109,13 +104,13 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
       params
     }, H5PEditor.contentId, undefined, undefined, {parent: this});
 
-    const markers = this.babylonBox.getMarkers();
-    for (let i = 0; i < markers.length; i++) {
-      this.processMarker(markers[i], this.params.markers[i]);
+    const annotations = this.babylonBox.getAnnotations();
+    for (let i = 0; i < annotations.length; i++) {
+      this.processAnnotation(annotations[i], this.params.annotations[i]);
     }
 
     this.babylonBox.on('dblClick', ({ data }) => {
-      this.addMarker(data.position, data.normalRef);
+      this.addAnnotation(data.position, data.normalRef);
     });
 
     this.$editor.empty();
@@ -131,22 +126,22 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
   }
 
   /**
-   * Creates form for edit marker content
-   * @param {Marker} marker - Associated marker
-   * @param {Object} parameters - Parameters of markers content
+   * Creates form for edit annotation content
+   * @param {Annotation} annotation - Associated annotation
+   * @param {Object} parameters - Parameters of annotations content
    */
-  RealityBoxEditor.prototype.createMarkerForm = function (marker, parameters) {
+  RealityBoxEditor.prototype.createAnnotationForm = function (annotation, parameters) {
     const $semanticFields = $('<div class="h5p-dialog-inner-semantics" />');
-    marker.$form = $semanticFields;
-    const markers = findField('markers', this.field.fields);
-    const markerFields = H5PEditor.$.extend(true, [], markers.field.fields);
+    annotation.$form = $semanticFields;
+    const annotations = findField('annotations', this.field.fields);
+    const annotationFields = H5PEditor.$.extend(true, [], annotations.field.fields);
 
-    hideFields(markerFields, ['position', 'normalRef']);
+    hideFields(annotationFields, ['position', 'normalRef']);
 
-    H5PEditor.processSemanticsChunk(markerFields, parameters, $semanticFields, this);
+    H5PEditor.processSemanticsChunk(annotationFields, parameters, $semanticFields, this);
 
     // hide selector for choosing library
-    var pos = markerFields.map(function (field) {
+    var pos = annotationFields.map(function (field) {
       return field.type;
     }).indexOf('library');
     if (pos > -1) {
@@ -155,24 +150,24 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
   }
 
   /**
-   * Processes marker
-   * @param {Marker} marker - Marker to process
-   * @param {Object} parameters - Parameters of markers content
+   * Processes annotation
+   * @param {Annotation} annotation - Annotation to process
+   * @param {Object} parameters - Parameters of annotations content
    */
-  RealityBoxEditor.prototype.processMarker = function (marker, parameters) {
-    this.createMarkerForm(marker, parameters);
-    marker.children = this.children;
+  RealityBoxEditor.prototype.processAnnotation = function (annotation, parameters) {
+    this.createAnnotationForm(annotation, parameters);
+    annotation.children = this.children;
     this.children = undefined;
-    this.newMarker(marker);
+    this.newAnnotation(annotation);
   }
 
   /**
-   * Gets H5P content field of specific marker
-   * @param {Marker} marker
-   * @return {Object} - H5P field for markers content
+   * Gets H5P content field of specific annotation
+   * @param {Annotation} annotation
+   * @return {Object} - H5P field for annotations content
    */
-  RealityBoxEditor.prototype.getMarkerFields = function (marker) {
-    return marker.children.reduce(function (prev, child) {
+  RealityBoxEditor.prototype.getAnnotationFields = function (annotation) {
+    return annotation.children.reduce(function (prev, child) {
       if (child.field && child.field.name) {
         prev[child.field.name] = child;
       }
@@ -181,20 +176,20 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
   }
 
   /**
-   * Opens form for a specific marker
-   * @param {Marker} marker
+   * Opens form for a specific annotation
+   * @param {Annotation} annotation
    */
-  RealityBoxEditor.prototype.openMarkerModal = function (marker) {
+  RealityBoxEditor.prototype.openAnnotationModal = function (annotation) {
     const formremoveHandler = () => {
-      if(!confirm('Would you like to remove this marker?')) {
+      if(!confirm('Would you like to remove this annotation?')) {
         return;
       }
-      this.removeMarker(marker);
+      this.removeAnnotation(annotation);
     }
     this.on('formremove', formremoveHandler);
 
     const formdoneHandler = () => {
-      for (child of marker.children) {
+      for (child of annotation.children) {
         child.validate();
       }
     }
@@ -207,44 +202,44 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     }
     this.on('formclose', formcloseHandler);
 
-    const libraryField = H5PEditor.findField('content', marker);
-    this.openForm(libraryField, marker.$form[0], 'h5p-realitybox-editor');
+    const libraryField = H5PEditor.findField('content', annotation);
+    this.openForm(libraryField, annotation.$form[0], 'h5p-realitybox-editor');
 
-    marker.trigger('openEditDialog');
+    annotation.trigger('openEditDialog');
   }
 
   /**
-   * Opens form for new created marker
-   * @param {Marker} marker - Newly created marker
+   * Opens form for new created annotation
+   * @param {Annotation} annotation - Newly created annotation
    */
-  RealityBoxEditor.prototype.newMarker = function (marker) {
-      this.openMarkerModal(marker);
+  RealityBoxEditor.prototype.newAnnotation = function (annotation) {
+      this.openAnnotationModal(annotation);
   }
 
   /**
-   * Removes marker
-   * @param {Marker} marker - Marker to remove
+   * Removes annotation
+   * @param {Annotation} annotation - Annotation to remove
    */
-  RealityBoxEditor.prototype.removeMarker = function (marker) {
-    this.babylonBox.removeMarker(marker);
-    this.params.markers.splice(marker.arrayPosition, 1);
-    H5PEditor.removeChildren(marker.children);
+  RealityBoxEditor.prototype.removeAnnotation = function (annotation) {
+    this.babylonBox.removeAnnotation(annotation);
+    this.params.annotations.splice(annotation.arrayPosition, 1);
+    H5PEditor.removeChildren(annotation.children);
   }
 
   /**
-   * Adds marker
-   * @param {Object} positionObj - Position where new marker should created
+   * Adds annotation
+   * @param {Object} positionObj - Position where new annotation should created
    * @param {number} positionObj.x - x position
    * @param {number} positionObj.y - y position
    * @param {number} positionObj.z - y position
-   * @param {Object} normalRefOject - Normal reference of marker and model
+   * @param {Object} normalRefOject - Normal reference of annotation and model
    * @param {number} normalRefOject.x - x position
    * @param {number} normalRefOject.y - y position
    * @param {number} normalRefOject.z - z position
-   * @param {Object} options - Config object for marker
-   * @return {Marker} - New created marker instance
+   * @param {Object} options - Config object for annotation
+   * @return {Annotation} - New created annotation instance
    */
-  RealityBoxEditor.prototype.addMarker = function (positionObj, normalRefObj, options) {
+  RealityBoxEditor.prototype.addAnnotation = function (positionObj, normalRefObj, options) {
     let params = {};
     if (options) {
       params = options;
@@ -269,11 +264,11 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     }
     params.id = H5P.createUUID();
 
-    this.params.markers.push(params);
-    this.marker = this.babylonBox.addMarker(params);
-    this.processMarker(this.marker, params);
+    this.params.annotations.push(params);
+    this.annotation = this.babylonBox.addAnnotation(params);
+    this.processAnnotation(this.annotation, params);
 
-    return this.marker;
+    return this.annotation;
   }
 
   /**
@@ -292,7 +287,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    */
   RealityBoxEditor.prototype.appendTo = function ($wrapper) {
     this.$item = $(this.createHTML()).appendTo($wrapper);
-    this.$editor = this.$item.children('.h5peditor-markers');
+    this.$editor = this.$item.children('.h5peditor-annotations');
     this.$errors = this.$item.children('.h5p-errors');
   }
 
@@ -301,7 +296,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    * @return {string} - HTML string
    */
   RealityBoxEditor.prototype.createHTML = function () {
-    return H5PEditor.createItem(this.field.widget, '<div class="h5peditor-markers" />');
+    return H5PEditor.createItem(this.field.widget, '<div class="h5peditor-annotations" />');
   }
 
   /**
@@ -310,8 +305,8 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    */
   RealityBoxEditor.prototype.validate = function () {
     if (this.babylonBox) {
-      for (marker of this.babylonBox.getMarkers()) {
-        for (child of marker.children) {
+      for (annotation of this.babylonBox.getAnnotations()) {
+        for (child of annotation.children) {
           child.validate();
         }
       }
@@ -355,13 +350,13 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
 
   /**
    * Hides fields from widget by name
-   * @param {Object[]} markerFields - All marker fields
+   * @param {Object[]} annotationFields - All annotation fields
    * @param {string[]} fields - Array of field names that should hided
    */
-  const hideFields = function (markerFields, fields) {
+  const hideFields = function (annotationFields, fields) {
     // Find and hide fields in list
     for (f of fields) {
-      var field = findField(f, markerFields);
+      var field = findField(f, annotationFields);
       if (field) {
         field.widget = 'none';
       }

@@ -1,8 +1,8 @@
-.h5peditor-realitybox--wrapper .editor-box {
+.h5p-realitybox-editor .h5peditor-annotations {
   padding: 1rem;
 }
 
-.h5peditor-realitybox--wrapper .editor-box .renderCanvas {
+.h5p-realitybox-editor .h5peditor-annotations .h5p-babylonbox--canvas {
   width: 100%;
   height: calc(0.75 * 100vh);
   max-height: 500px;
@@ -33,5 +33,16 @@
   border: none;
   padding: 0 20px 20px;
   box-sizing: border-box;
+}
+
+/* Tooltip styling */
+
+.h5peditor-annotations--tooltip {
+  position: absolute;
+  padding: 0.2rem 0.4rem;
+  background: rgba(42, 42, 42, 0.35);
+  color: #fff;
+  font-size: 13px;
+  border-radius: 4px;
 }
 

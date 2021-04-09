@@ -1,3 +1,5 @@
+import Tooltip from './tooltip.js';
+
 H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
 
   /**
@@ -51,6 +53,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
 
     parent.on('stepChanged', (event) => {
       this.currentTabIndex = event.data.id;
+      console.log(this.readies);
     });
 
   }
@@ -82,6 +85,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     console.log(file);
     this.model = file;
     this.deleteBabylonBox();
+    this.params.annotations.length = 0;
   }
 
   /**
@@ -109,8 +113,30 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
       this.processAnnotation(annotations[i], this.params.annotations[i]);
     }
 
+    // Create new by double-click
     this.babylonBox.on('dblClick', ({ data }) => {
       this.addAnnotation(data.position, data.normalRef);
+    });
+
+    // Init edit with click
+    this.babylonBox.on('annotation picked', ({ data }) => {
+      if (this.titleTooltip) {
+        this.titleTooltip.hide();
+      }
+      this.openAnnotationDialog(data);
+    });
+
+    // Show title tooltip while pointer over
+    this.babylonBox.on('annotation pointerover', ({ data }) => {
+      if (!this.titleTooltip) {
+        this.titleTooltip = new Tooltip();
+      }
+      if (typeof(data.content.metadata.title) !== 'undefined') {
+        this.titleTooltip.show(data.content.metadata.title);
+      }
+    });
+    this.babylonBox.on('annotation pointerout', () => {
+      this.titleTooltip.hide();
     });
 
     this.$editor.empty();
@@ -134,11 +160,20 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     const $semanticFields = $('<div class="h5p-dialog-inner-semantics" />');
     annotation.$form = $semanticFields;
     const annotations = findField('annotations', this.field.fields);
-    const annotationFields = H5PEditor.$.extend(true, [], annotations.field.fields);
+    const annotationFields = H5PEditor.$.extend(
+      true,
+      [],
+      annotations.field.fields
+    );
 
     hideFields(annotationFields, ['position', 'normalRef']);
 
-    H5PEditor.processSemanticsChunk(annotationFields, parameters, $semanticFields, this);
+    H5PEditor.processSemanticsChunk(
+      annotationFields,
+      parameters,
+      $semanticFields,
+      this
+    );
 
     // hide selector for choosing library
     var pos = annotationFields.map(function (field) {
@@ -158,7 +193,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     this.createAnnotationForm(annotation, parameters);
     annotation.children = this.children;
     this.children = undefined;
-    this.newAnnotation(annotation);
+    this.openAnnotationDialog(annotation);
   }
 
   /**
@@ -179,7 +214,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    * Opens form for a specific annotation
    * @param {Annotation} annotation
    */
-  RealityBoxEditor.prototype.openAnnotationModal = function (annotation) {
+  RealityBoxEditor.prototype.openAnnotationDialog = function (annotation) {
     const formremoveHandler = () => {
       if(!confirm('Would you like to remove this annotation?')) {
         return;
@@ -189,7 +224,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     this.on('formremove', formremoveHandler);
 
     const formdoneHandler = () => {
-      for (child of annotation.children) {
+      for (const child of annotation.children) {
         child.validate();
       }
     }
@@ -209,21 +244,16 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
   }
 
   /**
-   * Opens form for new created annotation
-   * @param {Annotation} annotation - Newly created annotation
-   */
-  RealityBoxEditor.prototype.newAnnotation = function (annotation) {
-      this.openAnnotationModal(annotation);
-  }
-
-  /**
    * Removes annotation
    * @param {Annotation} annotation - Annotation to remove
    */
   RealityBoxEditor.prototype.removeAnnotation = function (annotation) {
-    this.babylonBox.removeAnnotation(annotation);
-    this.params.annotations.splice(annotation.arrayPosition, 1);
-    H5PEditor.removeChildren(annotation.children);
+    const pos = this.babylonBox.getIndexOfAnnotation(annotation);
+    if (pos >= 0) {
+      this.params.annotations.splice(pos, 1);
+      this.babylonBox.removeAnnotation(annotation);
+      H5PEditor.removeChildren(annotation.children);
+    }
   }
 
   /**
@@ -239,27 +269,21 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    * @param {Object} options - Config object for annotation
    * @return {Annotation} - New created annotation instance
    */
-  RealityBoxEditor.prototype.addAnnotation = function (positionObj, normalRefObj, options) {
-    let params = {};
-    if (options) {
-      params = options;
-    }
-    else {
-      params = {
-        position: {
-          x: positionObj.x,
-          y: positionObj.y,
-          z: positionObj.z
-        },
-        normalRef: {
-          x: normalRefObj.x,
-          y: normalRefObj.y,
-          z: normalRefObj.z
-        },
-        content: {
-          library: 'H5P.Column 1.13',
-          params: {}
-        }
+  RealityBoxEditor.prototype.addAnnotation = function (positionObj, normalRefObj) {
+    const params = {
+      position: {
+        x: positionObj.x,
+        y: positionObj.y,
+        z: positionObj.z
+      },
+      normalRef: {
+        x: normalRefObj.x,
+        y: normalRefObj.y,
+        z: normalRefObj.z
+      },
+      content: {
+        library: 'H5P.Column 1.13',
+        params: {}
       }
     }
     params.id = H5P.createUUID();
@@ -296,7 +320,10 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    * @return {string} - HTML string
    */
   RealityBoxEditor.prototype.createHTML = function () {
-    return H5PEditor.createItem(this.field.widget, '<div class="h5peditor-annotations" />');
+    return H5PEditor.createItem(
+      this.field.widget,
+      '<div class="h5peditor-annotations" />'
+    );
   }
 
   /**
@@ -305,8 +332,8 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    */
   RealityBoxEditor.prototype.validate = function () {
     if (this.babylonBox) {
-      for (annotation of this.babylonBox.getAnnotations()) {
-        for (child of annotation.children) {
+      for (const annotation of this.babylonBox.getAnnotations()) {
+        for (const child of annotation.children) {
           child.validate();
         }
       }
@@ -323,7 +350,10 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     this.$item.remove();
   }
 
-
+  /**
+   * Collect functions to execute once the tree is complete.
+   * @param {function} ready
+   */
   RealityBoxEditor.prototype.ready = function (ready) {
     if (this.passReadies) {
       this.parent.ready(ready);
@@ -341,7 +371,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    * @return {Object} - Field with the specific name
    */
   const findField = function (name, fields) {
-    for (f of fields) {
+    for (const f of fields) {
       if (f.name === name) {
         return f;
       }
@@ -355,7 +385,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
    */
   const hideFields = function (annotationFields, fields) {
     // Find and hide fields in list
-    for (f of fields) {
+    for (const f of fields) {
       var field = findField(f, annotationFields);
       if (field) {
         field.widget = 'none';

@@ -40,9 +40,10 @@
 .h5peditor-annotations--tooltip {
   position: absolute;
   padding: 0.2rem 0.4rem;
-  background: rgba(42, 42, 42, 0.35);
+  background: rgba(42, 42, 42, 0.5);
   color: #fff;
   font-size: 13px;
   border-radius: 4px;
+  pointer-events: none;
 }
 

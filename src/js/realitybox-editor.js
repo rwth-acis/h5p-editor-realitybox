@@ -36,9 +36,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
       });
     });
 
-    this.params = $.extend({
-      annotations: []
-    }, params);
+    this.params = [];
     this.setValue(field, this.params);
 
     this.children = [];
@@ -85,7 +83,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     console.log(file);
     this.model = file;
     this.deleteBabylonBox();
-    this.params.annotations.length = 0;
+    this.params.length = 0;
   }
 
   /**
@@ -102,7 +100,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     }
 
     let modelUrl = H5P.getPath(this.model.path, H5PEditor.contentId);
-    let params = $.extend({}, { modelUrl }, this.params);
+    let params = $.extend({}, { modelUrl }, { annotations: this.params });
     this.babylonBox = H5P.newRunnable({
       library: 'H5P.BabylonBox 1.0',
       params
@@ -110,7 +108,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
 
     const annotations = this.babylonBox.getAnnotations();
     for (let i = 0; i < annotations.length; i++) {
-      this.processAnnotation(annotations[i], this.params.annotations[i]);
+      this.processAnnotation(annotations[i], this.params[i]);
     }
 
     // Create new by double-click
@@ -159,11 +157,11 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
   RealityBoxEditor.prototype.createAnnotationForm = function (annotation, parameters) {
     const $semanticFields = $('<div class="h5p-dialog-inner-semantics" />');
     annotation.$form = $semanticFields;
-    const annotations = findField('annotations', this.field.fields);
+    const annotationsList = findField('annotationsList', this.field.fields);
     const annotationFields = H5PEditor.$.extend(
       true,
       [],
-      annotations.field.fields
+      annotationsList.field.fields
     );
 
     hideFields(annotationFields, ['position', 'normalRef']);
@@ -250,7 +248,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
   RealityBoxEditor.prototype.removeAnnotation = function (annotation) {
     const pos = this.babylonBox.getIndexOfAnnotation(annotation);
     if (pos >= 0) {
-      this.params.annotations.splice(pos, 1);
+      this.params.splice(pos, 1);
       this.babylonBox.removeAnnotation(annotation);
       H5PEditor.removeChildren(annotation.children);
     }
@@ -288,7 +286,7 @@ H5PEditor.widgets.realitybox = H5PEditor.RealityBox = (function ($) {
     }
     params.id = H5P.createUUID();
 
-    this.params.annotations.push(params);
+    this.params.push(params);
     this.annotation = this.babylonBox.addAnnotation(params);
     this.processAnnotation(this.annotation, params);
 
